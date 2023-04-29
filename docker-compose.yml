@@ -1,0 +1,44 @@
+version: '3.9'
+
+services:
+# Сервис для разворачивания контейнера с базой данных
+  database:
+    pull_policy: missing
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    volumes:
+      - /var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=animal-chipization
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+
+# Сервис для разворачивания контейнера с приложением
+  webapi:
+    image: webapi
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - database
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - POSTGRES_DB=animal-chipization
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+
+# Сервис для разворачивания контейнера с автотестами
+  tests: 
+    image: mrexpen/planet_olymp_phase2
+    pull_policy: always
+    ports:
+      - "8090:8080"
+    depends_on:
+      - webapi
+    environment:
+      SERVER_URL: http://webapi:80
+      STAGE: all
